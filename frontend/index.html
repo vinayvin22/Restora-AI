@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoraAI - Heritage Restoration</title>
+    <style>
+        :root {
+            --primary: #FF5722;
+            --bg: #0F172A;
+            --card: #1E293B;
+            --text: #F8FAFC;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #FF5722, #FF9800);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #94A3B8;
+            margin-bottom: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 3rem;
+        }
+
+        select {
+            background-color: #0F172A;
+            color: var(--text);
+            border: 2px solid #334155;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), #D84315);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(255, 87, 34, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(255, 87, 34, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .results-grid.visible {
+            opacity: 1;
+        }
+
+        .image-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .image-wrapper {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #0F172A;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 2px solid #334155;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .label {
+            font-weight: 700;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-size: 0.9rem;
+        }
+
+        .loader {
+            display: none;
+            margin: 20px;
+            border: 4px solid #334155;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>RestoraAI</h1>
+    <p class="subtitle">Select a distorted monument and restore its heritage</p>
+
+    <div class="container">
+        <div class="controls">
+            <select id="distortedSelect">
+                <option value="" disabled selected>Select distorted image...</option>
+            </select>
+            <button id="restoreBtn" class="btn">Run Restoration</button>
+        </div>
+
+        <div id="loader" class="loader"></div>
+
+        <div id="resultsGrid" class="results-grid">
+            <div class="image-card">
+                <div class="image-wrapper">
+                    <img id="distortedImg" src="" alt="Distorted">
+                </div>
+                <div class="label">Distorted Input</div>
+            </div>
+            <div class="image-card">
+                <div class="image-wrapper">
+                    <img id="restoredImg" src="" alt="Restored">
+                </div>
+                <div class="label">Restored Output</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const distortedSelect = document.getElementById('distortedSelect');
+        const restoreBtn = document.getElementById('restoreBtn');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const loader = document.getElementById('loader');
+
+        // Populate dropdown on load
+        async function loadList() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/list_distorted');
+                const list = await response.json();
+                list.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    opt.textContent = item;
+                    distortedSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Failed to load image list', e);
+            }
+        }
+
+        restoreBtn.addEventListener('click', async () => {
+            const selected = distortedSelect.value;
+            if (!selected) {
+                alert('Please select an image first.');
+                return;
+            }
+
+            restoreBtn.disabled = true;
+            resultsGrid.classList.remove('visible');
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/restore_selected/${selected}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    document.getElementById('distortedImg').src = data.distorted;
+                    document.getElementById('restoredImg').src = data.restored;
+                    resultsGrid.classList.add('visible');
+                }
+            } catch (error) {
+                alert('Backend connection failed.');
+            } finally {
+                restoreBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+
+        loadList();
+    </script>
+</body>
+
+</html>
