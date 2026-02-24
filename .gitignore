@@ -2,3 +2,13 @@ __pycache__/
 *.pyc
 .env
 dataset/
+saved_models/
+backend/gallery_mapping.json
+frontend/distorted_gallery/
+*.png
+*.jpg
+*.jpeg
+.vscode/
+.idea/
+!api/gallery/**/*.jpg
+!api/gallery/**/*.png
