@@ -209,7 +209,7 @@
         // Populate dropdown on load
         async function loadList() {
             try {
-                const response = await fetch('http://127.0.0.1:8000/list_distorted');
+                const response = await fetch('/api/list_distorted');
                 const list = await response.json();
                 list.forEach(item => {
                     const opt = document.createElement('option');
@@ -234,7 +234,7 @@
             loader.style.display = 'block';
 
             try {
-                const response = await fetch(`http://127.0.0.1:8000/restore_selected/${selected}`);
+                const response = await fetch(`/api/restore_selected/${selected}`);
                 const data = await response.json();
 
                 if (data.error) {
